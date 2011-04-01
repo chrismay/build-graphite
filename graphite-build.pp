@@ -50,7 +50,8 @@ class nodejs{
 
 define make_deb($version,$depends,$description,$pkg_name="graphite-${name}" ){
   $destdir="/opt/build/${name}-${version}"
-    file{"${destdir}/package/DEBIAN": ensure=>directory}
+    file{"${destdir}/package/DEBIAN": 
+      ensure=>directory}
     file{"${destdir}/package/DEBIAN/control": 
         content=>template("/vagrant/control.erb")
     }
@@ -64,7 +65,10 @@ define make_deb($version,$depends,$description,$pkg_name="graphite-${name}" ){
 
 define python-build($version,$creates_dir="opt"){
   $destdir="/opt/build/${name}-${version}"
-  file{"${destdir}/package": ensure=>directory}
+  file{"${destdir}/package": 
+     ensure=>directory,
+     require=>Exec["get-source-${name}-${version}"]
+  }
 
   graphite-package-source{"$name": version=>$version}
   exec{"/usr/bin/python ${destdir}/setup.py install --root=./package":
@@ -83,5 +87,10 @@ define graphite-package-source($version){
    alias=>"get-source-${name}-${version}"
 }
 }
-
+class startup{
+   exec{"/usr/bin/apt-get update": }
+}
+stage { "first": before => Stage[main] }
+class {"startup": stage=>first}
+include startup
 include graphite-app-build
