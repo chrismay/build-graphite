@@ -1,6 +1,6 @@
 class graphite-app-build{
     package{["curl","build-essential","python-software-properties"]:ensure=>present}
-package{["python-cairo",
+    package{["python-cairo",
          "python-twisted",
          "python-ldap",
          "libapache2-mod-python",
@@ -40,22 +40,23 @@ class graphite-build{
    }
 }
 class nodejs{
- exec{"/usr/bin/add-apt-repository ppa:jerome-etienne/neoip && /usr/bin/apt-get update": 
-   alias=>"add-nodejs-repo"
-   ,require=>Package["python-software-properties"]
-   ,creates=>"/etc/apt/sources.list.d/jerome-etienne-neoip-lucid.list"
-} 
- package{nodejs: ensure=>present, require=>Exec["add-nodejs-repo"]}
+    exec{"/usr/bin/add-apt-repository ppa:jerome-etienne/neoip && /usr/bin/apt-get update": 
+    alias=>"add-nodejs-repo"
+    ,require=>Package["python-software-properties"]
+    ,creates=>"/etc/apt/sources.list.d/jerome-etienne-neoip-lucid.list"
+    } 
+    package{nodejs: ensure=>present, require=>Exec["add-nodejs-repo"]}
 }
 
 define make_deb($version,$depends,$description,$package_name="UNDEF" ){
-  $pkg_name=$package_name?{
-  "UNDEF"=>"graphite-${name}",
-  default=>"${package_name}"
-  }
-  $destdir="/opt/build/${name}-${version}"
+    $pkg_name=$package_name?{
+        "UNDEF"=>"graphite-${name}",
+        default=>"${package_name}"
+    }
+    $destdir="/opt/build/${name}-${version}"
     file{"${destdir}/package/DEBIAN": 
-      ensure=>directory}
+        ensure=>director
+    }
     file{"${destdir}/package/DEBIAN/control": 
         content=>template("/vagrant/control.erb")
     }
@@ -68,31 +69,31 @@ define make_deb($version,$depends,$description,$package_name="UNDEF" ){
 }
 
 define python-build($version,$creates_dir="opt"){
-  $destdir="/opt/build/${name}-${version}"
-  file{"${destdir}/package": 
-     ensure=>directory,
-     require=>Exec["get-source-${name}-${version}"]
-  }
+    $destdir="/opt/build/${name}-${version}"
+    file{"${destdir}/package": 
+        ensure=>directory,
+        require=>Exec["get-source-${name}-${version}"]
+    }
 
-  graphite-package-source{"$name": version=>$version}
-  exec{"/usr/bin/python ${destdir}/setup.py install --root=./package":
-    creates=>"${destdir}/package/${creates_dir}"
-    ,cwd=>"${destdir}"
-    ,require=>[File["${destdir}/package"],Exec["get-source-${name}-${version}"]]
-    ,alias=>"make-${name}-${version}"
-  }
+    graphite-package-source{"$name": version=>$version}
+    exec{"/usr/bin/python ${destdir}/setup.py install --root=./package":
+       creates=>"${destdir}/package/${creates_dir}"
+       ,cwd=>"${destdir}"
+       ,require=>[File["${destdir}/package"],Exec["get-source-${name}-${version}"]]
+       ,alias=>"make-${name}-${version}"
+    }
 }
 
 define graphite-package-source($version){
-  $source_url="http://graphite.wikidot.com/local--files/downloads/${name}-${version}.tar.gz"
-  exec{"/usr/bin/curl -L ${source_url} | /bin/tar zxvf - -C /opt/build":
-   require=>File["/opt/build"]
-   ,creates=>"/opt/build/${name}-${version}",
-   alias=>"get-source-${name}-${version}"
-}
+    $source_url="http://graphite.wikidot.com/local--files/downloads/${name}-${version}.tar.gz"
+    exec{"/usr/bin/curl -L ${source_url} | /bin/tar zxvf - -C /opt/build":
+        require=>File["/opt/build"]
+        ,creates=>"/opt/build/${name}-${version}",
+        alias=>"get-source-${name}-${version}"
+    }
 }
 class startup{
-   exec{"/usr/bin/apt-get update": }
+    exec{"/usr/bin/apt-get update": }
 }
 stage { "first": before => Stage[main] }
 class {"startup": stage=>first}
