@@ -36,7 +36,7 @@ class graphite-build{
        version=>"0.9.6",
        description=>"graphite web ui",
        depends=>"graphite-carbon",
-       pkg_name=>"graphite-web"
+       package_name=>"graphite-web"
    }
 }
 class nodejs{
@@ -48,7 +48,11 @@ class nodejs{
  package{nodejs: ensure=>present, require=>Exec["add-nodejs-repo"]}
 }
 
-define make_deb($version,$depends,$description,$pkg_name="graphite-${name}" ){
+define make_deb($version,$depends,$description,$package_name="UNDEF" ){
+  $pkg_name=$package_name?{
+  "UNDEF"=>"graphite-${name}",
+  default=>"${package_name}"
+  }
   $destdir="/opt/build/${name}-${version}"
     file{"${destdir}/package/DEBIAN": 
       ensure=>directory}
