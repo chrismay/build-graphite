@@ -13,7 +13,6 @@ class graphite-app-build{
     include whisper-build
     include carbon-build
     include graphite-build
-    include nodejs
 }
 class whisper-build{
    python-build{"whisper": version=>"0.9.6",creates_dir=>"usr"}
@@ -38,14 +37,6 @@ class graphite-build{
        depends=>"graphite-carbon",
        package_name=>"graphite-web"
    }
-}
-class nodejs{
-    exec{"/usr/bin/add-apt-repository ppa:jerome-etienne/neoip && /usr/bin/apt-get update": 
-    alias=>"add-nodejs-repo"
-    ,require=>Package["python-software-properties"]
-    ,creates=>"/etc/apt/sources.list.d/jerome-etienne-neoip-lucid.list"
-    } 
-    package{nodejs: ensure=>present, require=>Exec["add-nodejs-repo"]}
 }
 
 define make_deb($version,$depends,$description,$package_name="UNDEF" ){
