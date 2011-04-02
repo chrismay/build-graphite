@@ -55,7 +55,7 @@ define make_deb($version,$depends,$description,$package_name="UNDEF" ){
     }
     $destdir="/opt/build/${name}-${version}"
     file{"${destdir}/package/DEBIAN": 
-        ensure=>director
+        ensure=>directory
     }
     file{"${destdir}/package/DEBIAN/control": 
         content=>template("/vagrant/control.erb")
@@ -92,6 +92,32 @@ define graphite-package-source($version){
         alias=>"get-source-${name}-${version}"
     }
 }
+
+class  node-js-build{
+  $node_version="v0.4.5"
+  $build_path="/opt/build/node-${node_version}"
+  package{["python","libssl-dev"]: ensure=>present}
+  $source_url = "http://nodejs.org/dist/node-${node_version}.tar.gz"
+  exec{"/usr/bin/curl -L ${source_url} | /bin/tar zxvf - -C /opt/build":
+        require=>File["/opt/build"]
+        ,creates=>"$build_path",
+        alias=>"get-source-node-${node_version}"
+  }
+  file{"${build_path}/package": ensure=>directory, require=>Exec["get-source-node-${node_version}"]}
+  make_deb{"node":
+      version=>"${node_version}",
+      package_name=>"nodejs",
+     depends=>"",
+     description=>"node.js server"
+  }
+  exec{"${build_path}/configure --prefix=${build_path}/package/opt/node && make && make install":
+     cwd=>"${build_path}",
+     timeout=>"-1",
+     creates=>"${build_path}/package/opt",
+     alias=>"make-node-${node_version}"
+  }
+}
+
 class startup{
     exec{"/usr/bin/apt-get update": }
 }
@@ -99,3 +125,4 @@ stage { "first": before => Stage[main] }
 class {"startup": stage=>first}
 include startup
 include graphite-app-build
+include node-js-build
