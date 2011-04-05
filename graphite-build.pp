@@ -128,7 +128,7 @@ class statsd-build{
     ,require=>Exec["clone-statsd"]
     ,ensure=>directory}
 
-    file{"/opt/build/statsd-${statsd_version}/package/opt/statsd/statsd.js": 
+    file{"/opt/build/statsd-${statsd_version}/package/opt/statsd/stats.js": 
     source=>"/opt/build/statsd-${statsd_version}/stats.js"
     ,require=>Exec["clone-statsd"]
     }
@@ -136,7 +136,7 @@ class statsd-build{
         source=>"/opt/build/statsd-${statsd_version}/config.js"
         ,require=>Exec["clone-statsd"]
     }
-    file{"/opt/build/statsd-${statsd_version}/package/etc/statsd.js":
+    file{"/opt/build/statsd-${statsd_version}/package/etc/statsd-config.js":
         content=>"{ graphitePort: 2003
         , graphiteHost: \"localhost\"
         , port: 8125 }",
@@ -144,21 +144,22 @@ class statsd-build{
     exec{"/usr/bin/touch /opt/build/statsd-${statsd_version}/built.${statsd_version}":
         alias=>"make-statsd-${statsd_version}",
         creates=>"/opt/build/statsd-${statsd_version}/built.${statsd_version}",
-        require=>[File["/opt/build/statsd-${statsd_version}/package/etc/statsd.js"],
+        require=>[File["/opt/build/statsd-${statsd_version}/package/etc/statsd-config.js"],
         File["/opt/build/statsd-${statsd_version}/package/opt/statsd/config.js"],
-        File["/opt/build/statsd-${statsd_version}/package/opt/statsd/statsd.js"],
-        File["/opt/build/statsd-${statsd_version}/package/etc/init/statsd"]]
+        File["/opt/build/statsd-${statsd_version}/package/opt/statsd/stats.js"],
+        File["/opt/build/statsd-${statsd_version}/package/etc/init/statsd.conf"]]
     }
 
-    file{"/opt/build/statsd-${statsd_version}/package/etc/init/statsd":
-        content=>"description \"my server\"
-        start on (local-filesystems and net-device-up IFACE=eth0)
-        stop on shutdown
+    file{"/opt/build/statsd-${statsd_version}/package/etc/init/statsd.conf":
+        content=>"description \"statsd server\"
+        start on filesystem
+        stop on runlevel [!2345]
         respawn
-        exec sudo -u www-data sh -c \"/usr/bin/node /opt/statsd/stats.js |logger \" "
+        exec sudo -u www-data sh -c \"/usr/bin/node /opt/statsd/stats.js /etc/statsd-config.js |logger \" "
     }
     make_deb{"statsd":
         version=>"${statsd_version}",
+        package_name=>"statsd",
         depends=>"nodejs",
         description=>"statsd daemon"
     }
